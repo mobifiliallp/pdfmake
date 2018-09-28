@@ -218,6 +218,48 @@ function fixPageSize(pageSize, pageOrientation) {
 	return size;
 }
 
+PdfPrinter.prototype.computeDocumentLayout = function(docDefinition, options) {
+	options = options || {};
+
+	var pageSize = pageSize2widthAndHeight(docDefinition.pageSize || 'a4');
+
+	if (docDefinition.pageOrientation === 'landscape') {
+		pageSize = {
+			width: pageSize.height,
+			height: pageSize.width
+		};
+	}
+	pageSize.orientation = docDefinition.pageOrientation === 'landscape'
+		? docDefinition.pageOrientation
+		: 'portrait';
+
+	this.pdfKitDoc = new PdfKit({
+		size: [
+			pageSize.width, pageSize.height
+		],
+		compress: false
+	});
+	this.pdfKitDoc.info.Producer = 'pdfmake';
+	this.pdfKitDoc.info.Creator = 'pdfmake';
+	this.fontProvider = new FontProvider(this.fontDescriptors, this.pdfKitDoc);
+
+	docDefinition.images = docDefinition.images || {};
+
+	var builder = new LayoutBuilder(pageSize, fixPageMargins(docDefinition.pageMargins || 40), new ImageMeasure(this.pdfKitDoc, docDefinition.images));
+
+	registerDefaultTableLayouts(builder);
+	if (options.tableLayouts) {
+		builder.registerTableLayouts(options.tableLayouts);
+	}
+
+	var pages = builder.layoutDocument(docDefinition.content, this.fontProvider, docDefinition.styles || {}, docDefinition.defaultStyle || {
+		fontSize: 12,
+		font: 'Roboto'
+	}, docDefinition.background, docDefinition.header, docDefinition.footer, docDefinition.images, docDefinition.watermark, docDefinition.pageBreakBefore);
+
+	return builder.writer.context();
+};
+
 function fixPageMargins(margin) {
 	if (!margin) {
 		return null;
@@ -307,7 +349,9 @@ function pageSize2widthAndHeight(pageSize) {
 }
 
 function updatePageOrientationInOptions(currentPage, pdfKitDoc) {
-	var previousPageOrientation = pdfKitDoc.options.size[0] > pdfKitDoc.options.size[1] ? 'landscape' : 'portrait';
+	var previousPageOrientation = pdfKitDoc.options.size[0] > pdfKitDoc.options.size[1]
+		? 'landscape'
+		: 'portrait';
 
 	if (currentPage.pageSize.orientation !== previousPageOrientation) {
 		var width = pdfKitDoc.options.size[0];

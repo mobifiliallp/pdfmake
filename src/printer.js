@@ -499,7 +499,7 @@ function renderWatermark(page, pdfKitDoc) {
 	pdfKitDoc.rotate(angle, {origin: [pdfKitDoc.page.width / 2, pdfKitDoc.page.height / 2]});
 
 	var x = pdfKitDoc.page.width / 2 - watermark.size.size.width / 2;
-	var y = pdfKitDoc.page.height / 2 - watermark.size.size.height / 4;
+	var y = pdfKitDoc.page.height / 2 - watermark.size.size.height / 2;
 
 	pdfKitDoc._font = watermark.font;
 	pdfKitDoc.fontSize(watermark.size.fontSize);
@@ -509,6 +509,10 @@ function renderWatermark(page, pdfKitDoc) {
 }
 
 function renderVector(vector, pdfKitDoc) {
+	if (vector.type.startsWith('x-')) {
+		return renderXVector(vector, pdfKitDoc);
+	}
+
 	//TODO: pdf optimization (there's no need to write all properties everytime)
 	pdfKitDoc.lineWidth(vector.lineWidth || 1);
 	if (vector.dash) {
@@ -599,6 +603,237 @@ function beginClip(rect, pdfKitDoc) {
 
 function endClip(pdfKitDoc) {
 	pdfKitDoc.restore();
+}
+
+/*
+ * Extended handlers - Mobifilia
+ */
+function renderXImage(image, pdfKitDoc) {
+	pdfKitDoc.save();
+	if (image.rotation !== 0) {
+		docTransformRotate(image.rotation, image.rotationOrigin, pdfKitDoc);
+	}
+
+	pdfKitDoc.image(image.image, image.x, image.y, {
+		width: image._width,
+		height: image._height
+	});
+	pdfKitDoc.restore();
+}
+
+function docTransformRotate(angle, origin, pdfKitDoc) {
+	var angle = (angle * -1).toFixed(2);
+
+	if ((origin !== null) && (origin !== undefined)) {
+		pdfKitDoc.rotate(angle, {
+			origin: [origin.x, origin.y]
+		});
+	} else {
+		pdfKitDoc.rotate(angle);
+	}
+}
+
+function renderXVector(vector, pdfKitDoc) {
+	switch (vector.type) {
+		case 'x-saveContext':
+			pdfKitDoc.save();
+			break;
+
+		case 'x-restoreContext':
+			pdfKitDoc.restore();
+			break;
+
+		case 'x-rotateContext':
+			xVecRotateContext(vector, pdfKitDoc);
+			break;
+
+		case 'x-translateContext':
+			xVecTranslateContext(vector, pdfKitDoc);
+			break;
+
+		case 'x-scaleContext':
+			xVecScaleContext(vector, pdfKitDoc);
+			break;
+
+			case 'x-lineStyle':
+			xVecLineStyle(vector, pdfKitDoc);
+			break;
+
+		case 'x-strokeColor':
+			xVecStrokeColor(vector, pdfKitDoc);
+			break;
+
+		case 'x-fillColor':
+			xVecFillColor(vector, pdfKitDoc);
+			break;
+
+		case 'x-strokePath':
+			xVecStrokePath(vector, pdfKitDoc);
+			break;
+
+		case 'x-fillPath':
+			xVecFillPath(vector, pdfKitDoc);
+			break;
+
+		case 'x-fillAndStrokePath':
+			xVecFillAndStrokePath(vector, pdfKitDoc);
+			break;
+
+		case 'x-moveTo':
+			xVecMoveTo(vector, pdfKitDoc);
+			break;
+
+		case 'x-lineTo':
+			xVecLineTo(vector, pdfKitDoc);
+			break;
+
+		case 'x-line':
+			xVecLine(vector, pdfKitDoc);
+			break;
+
+		case 'x-rect':
+			xVecRect(vector, pdfKitDoc);
+			break;
+
+		case 'x-ellipse':
+			xVecElipse(vector, pdfKitDoc);
+			break;
+
+		case 'x-quadraticCurve':
+			xVecQuadraticCurve(vector, pdfKitDoc);
+			break;
+
+		case 'x-bezierCurve':
+			xVecBezierCurve(vector, pdfKitDoc);
+			break;
+
+		case 'x-closePath':
+			pdfKitDoc.closePath();
+			break;
+
+		case 'x-clipToRect':
+			xVecClipToRect(vector, pdfKitDoc);
+			break;
+	}
+}
+
+function xVecRotateContext(vector, pdfKitDoc) {
+	var angle = (vector.angle * -1).toFixed(2);
+
+	if (vector.origin !== undefined) {
+		pdfKitDoc.rotate(angle, {
+			origin: [vector.origin.x, vector.origin.y]
+		});
+	} else {
+		pdfKitDoc.rotate(angle);
+	}
+}
+
+function xVecTranslateContext(vector, pdfKitDoc) {
+	pdfKitDoc.translate(vector.x, vector.y);
+}
+
+function xVecScaleContext(vector, pdfKitDoc) {
+	var scale = vector.scale;
+
+	if (vector.origin !== undefined) {
+		pdfKitDoc.scale(scale, {
+			origin: [vector.origin.x, vector.origin.y]
+		});
+	} else {
+		pdfKitDoc.scale(scale);
+	}
+}
+
+function xVecLineStyle(vector, pdfKitDoc) {
+	pdfKitDoc.lineWidth(vector.lineWidth || 1);
+	if (vector.dash) {
+		pdfKitDoc.dash(vector.dash.length, {
+			space: vector.dash.space || vector.dash.length
+		});
+	} else {
+		pdfKitDoc.undash();
+	}
+}
+
+function xVecStrokeColor(vector, pdfKitDoc) {
+	if (vector.strokeOpacity) {
+		pdfKitDoc.strokeColor(vector.strokeColor, vector.strokeOpacity);
+	} else {
+		pdfKitDoc.strokeColor(vector.strokeColor);
+	}
+}
+
+function xVecFillColor(vector, pdfKitDoc) {
+	if (vector.fillOpacity) {
+		pdfKitDoc.fillColor(vector.fillColor, vector.fillOpacity);
+	} else {
+		pdfKitDoc.fillColor(vector.fillColor);
+	}
+}
+
+function xVecStrokePath(vector, pdfKitDoc) {
+	if (vector.strokeColor !== undefined) {
+		pdfKitDoc.stroke(vector.strokeColor);
+	} else {
+		pdfKitDoc.stroke();
+	}
+}
+
+function xVecFillPath(vector, pdfKitDoc) {
+	if (vector.fillColor !== undefined) {
+		pdfKitDoc.fill(vector.fillColor);
+	} else {
+		pdfKitDoc.fill();
+	}
+}
+
+function xVecFillAndStrokePath(vector, pdfKitDoc) {
+	if ((vector.strokeColor !== undefined) && (vetor.fillColor !== undefined)) {
+		pdfKitDoc.fillAndStroke(vector.fillColor, vector.strokeColor);
+	} else {
+		pdfKitDoc.fillAndStroke();
+	}
+}
+
+function xVecMoveTo(vector, pdfKitDoc) {
+	pdfKitDoc.moveTo(vector.x, vector.y);
+}
+
+function xVecLineTo(vector, pdfKitDoc) {
+	pdfKitDoc.lineTo(vector.x, vector.y);
+}
+
+function xVecLine(vector, pdfKitDoc) {
+	pdfKitDoc.moveTo(vector.x1, vector.y1);
+	pdfKitDoc.lineTo(vector.x2, vector.y2);
+}
+
+function xVecRect(vector, pdfKitDoc) {
+	pdfKitDoc.rect(vector.x, vector.y, vector.width, vector.height);
+}
+
+function xVecElipse(vector, pdfKitDoc) {
+	pdfKitDoc.ellipse(vector.cx, vector.cy, vector.rx, vector.ry);
+}
+
+function xVecQuadraticCurve(vector, pdfKitDoc) {
+	if ((vector.x1 !== undefined) && (vector.x2 !== undefined)) {
+		pdfKitDoc.moveTo(vector.x1, vector.x2);
+	}
+	pdfKitDoc.quadraticCurveTo(vector.cpx, vector.cpy, vector.x2, vector.y2);
+}
+
+function xVecBezierCurve(vector, pdfKitDoc) {
+	if ((vector.x1 !== undefined) && (vector.x2 !== undefined)) {
+		pdfKitDoc.moveTo(vector.x1, vector.x2);
+	}
+	pdfKitDoc.bezierCurveTo(vector.cpx1, vector.cpy1, vector.cpx2, vector.cpy2, vector.x2, vector.y2);
+}
+
+function xVecClipToRect(vector, pdfKitDoc) {
+	pdfKitDoc.rect(vector.x, vector.y, vector.width, vector.height);
+	pdfKitDoc.clip();
 }
 
 module.exports = PdfPrinter;

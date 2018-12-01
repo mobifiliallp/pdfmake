@@ -211,6 +211,12 @@ function fixPageSize(pageSize, pageOrientation) {
 	}
 
 	var size = pageSize2widthAndHeight(pageSize || 'A4');
+
+	// mf-x-swa: check to disable auto page orientation change based on page size
+	if (pageSize['x-disableAutoPageOrientation']) {
+		return size;
+	}
+
 	if (isNeedSwapPageSizes(pageOrientation)) { // swap page sizes
 		size = {width: size.height, height: size.width};
 	}
@@ -218,6 +224,7 @@ function fixPageSize(pageSize, pageOrientation) {
 	return size;
 }
 
+// mf-x-swa: added helper to calculate layout without generating the PDF
 PdfPrinter.prototype.computeDocumentLayout = function(docDefinition, options) {
 	options = options || {};
 
@@ -491,6 +498,7 @@ function renderWatermark(page, pdfKitDoc) {
 }
 
 function renderVector(vector, pdfKitDoc) {
+	// mf-x-swa: check extended vector support
 	if (vector.type.startsWith('x-')) {
 		return renderXVector(vector, pdfKitDoc);
 	}
@@ -572,6 +580,8 @@ function renderVector(vector, pdfKitDoc) {
 
 function renderImage(image, x, y, pdfKitDoc) {
 	pdfKitDoc.opacity(image.opacity || 1);
+
+	// mf-x-swa: extended image check
 	if (image.xImage) {
 		renderXImage(image, pdfKitDoc);
 	} else {
@@ -593,7 +603,7 @@ function endClip(pdfKitDoc) {
 }
 
 /*
- * Extended handlers - Mobifilia
+ * mf-x-swa: Extended features handlers
  */
 function renderXImage(image, pdfKitDoc) {
 	pdfKitDoc.save();

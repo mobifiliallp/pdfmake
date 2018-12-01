@@ -166,25 +166,6 @@ LayoutBuilder.prototype.tryLayoutDocument = function (docStructure, fontProvider
 	return {pages: this.writer.context().pages, linearNodeList: this.linearNodeList};
 };
 
-LayoutBuilder.prototype.getHeightOfCurrentTable = function (docStructure, fontProvider, styleDictionary, defaultStyle, background, header, footer, images, watermark, pageBreakBeforeFct) {
-
-	this.linearNodeList = [];
-	docStructure = this.docMeasure.measureDocument(docStructure);
-
-	this.writer = new PageElementWriter(
-		new DocumentContext(this.pageSize, this.pageMargins), this.tracker);
-
-	var _this = this;
-	this.writer.context().tracker.startTracking('pageAdded', function () {
-		_this.addBackground(background);
-	});
-
-	this.addBackground(background);
-	this.processNode(docStructure);
-
-	return this.writer.context();
-};
-
 
 LayoutBuilder.prototype.addBackground = function (background) {
 	var backgroundGetter = isFunction(background) ? background : function () {
@@ -721,7 +702,7 @@ LayoutBuilder.prototype.buildNextLine = function (textNode) {
 
 	line.lastLineInParagraph = textNode._inlines.length === 0;
 
-  // MF - extended attribute
+  // mf-x-swa: extended text support
   if (textNode.xText)  {
     line.xText = true;
   }

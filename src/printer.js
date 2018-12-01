@@ -571,6 +571,7 @@ function renderVector(vector, pdfKitDoc) {
 }
 
 function renderImage(image, x, y, pdfKitDoc) {
+	pdfKitDoc.opacity(image.opacity || 1);
 	if (image.xImage) {
 		renderXImage(image, pdfKitDoc);
 	} else {

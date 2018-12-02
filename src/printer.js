@@ -212,11 +212,6 @@ function fixPageSize(pageSize, pageOrientation) {
 
 	var size = pageSize2widthAndHeight(pageSize || 'A4');
 
-	// mf-x-swa: check to disable auto page orientation change based on page size
-	if (pageSize['x-disableAutoPageOrientation']) {
-		return size;
-	}
-
 	if (isNeedSwapPageSizes(pageOrientation)) { // swap page sizes
 		size = {width: size.height, height: size.width};
 	}

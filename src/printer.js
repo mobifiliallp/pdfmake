@@ -810,15 +810,15 @@ function xVecElipse(vector, pdfKitDoc) {
 }
 
 function xVecQuadraticCurve(vector, pdfKitDoc) {
-	if ((vector.x1 !== undefined) && (vector.x2 !== undefined)) {
-		pdfKitDoc.moveTo(vector.x1, vector.x2);
+	if ((vector.x1 !== undefined) && (vector.y1 !== undefined)) {
+		pdfKitDoc.moveTo(vector.x1, vector.y1);
 	}
 	pdfKitDoc.quadraticCurveTo(vector.cpx, vector.cpy, vector.x2, vector.y2);
 }
 
 function xVecBezierCurve(vector, pdfKitDoc) {
-	if ((vector.x1 !== undefined) && (vector.x2 !== undefined)) {
-		pdfKitDoc.moveTo(vector.x1, vector.x2);
+	if ((vector.x1 !== undefined) && (vector.y1 !== undefined)) {
+		pdfKitDoc.moveTo(vector.x1, vector.y1);
 	}
 	pdfKitDoc.bezierCurveTo(vector.cpx1, vector.cpy1, vector.cpx2, vector.cpy2, vector.x2, vector.y2);
 }

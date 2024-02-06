@@ -606,6 +606,16 @@ function renderXImage(image, pdfKitDoc) {
 		docTransformRotate(image.rotation, image.rotationOrigin, pdfKitDoc);
 	}
 
+	if (image.xImageFlipV || image.xImageFlipH) {
+		pdfKitDoc.scale(
+			image.xImageFlipH ? -1 : 1,
+			image.xImageFlipV ? -1 : 1,
+			{
+				origin: [image.x + image._width / 2, image.y + image._height / 2]
+			}
+		);
+	}
+
 	pdfKitDoc.image(image.image, image.x, image.y, {
 		width: image._width,
 		height: image._height

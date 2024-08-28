@@ -1,16 +1,16 @@
-# pdfmake [![Node.js CI][githubactions_img]][githubactions_url] [![GitHub][github_img]][github_url] [![npm][npm_img]][npm_url] [![Bower][bower_img]][bower_url] [![Packagist][packagist_img]][packagist_url] [![CDNJS][cdnjs_img]][cndjs_url]
+# pdfmake [![GitHub][github_img]][github_url] [![npm][npm_img]][npm_url]
 
 [githubactions_img]: https://github.com/bpampuch/pdfmake/workflows/Node.js%20CI/badge.svg?branch=0.1
 [githubactions_url]: https://github.com/bpampuch/pdfmake/actions
 
-[github_img]: https://img.shields.io/github/release/bpampuch/pdfmake.svg
-[github_url]: https://github.com/bpampuch/pdfmake/releases/latest
+[github_img]: https://img.shields.io/github/release/mfllp/pdfmake.svg
+[github_url]: https://github.com/mfllp/pdfmake/releases/latest
 
 [npm_img]: https://img.shields.io/npm/v/pdfmake.svg?colorB=0E7FBF
-[npm_url]: https://www.npmjs.com/package/pdfmake
+[npm_url]: https://www.npmjs.com/package/@mfllp/pdfmake
 
 [bower_img]: https://img.shields.io/bower/v/pdfmake.svg?colorB=0E7FBF
-[bower_url]: https://github.com/bpampuch/pdfmake
+[bower_url]: https://github.com/mfllp/pdfmake
 
 [packagist_img]: https://img.shields.io/packagist/v/bpampuch/pdfmake.svg?colorB=0E7FBF
 [packagist_url]: https://packagist.org/packages/bpampuch/pdfmake

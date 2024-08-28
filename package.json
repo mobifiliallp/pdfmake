@@ -1,6 +1,6 @@
 {
   "name": "@mfllp/pdfmake",
-  "version": "0.2.12-1",
+  "version": "0.2.12-2",
   "description": "Client/server side PDF printing in pure JavaScript (with extensions)",
   "main": "src/printer.js",
   "browser": "build/pdfmake.js",

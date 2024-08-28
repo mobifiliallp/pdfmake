@@ -17,12 +17,12 @@ if (sourcePath === undefined) {
 	console.log('Examples:');
 	console.log('  node build-vfs.js "examples/fonts"');
 	console.log('  node build-vfs.js "examples/fonts" "./build/vfs_fonts.js"');
-	return;
+	// return;
 }
 
 if (!fs.existsSync(sourcePath)) {
 	console.error('Source path "' + sourcePath + '" not found.');
-	return;
+	// return;
 }
 
 console.log('Source path:', sourcePath);

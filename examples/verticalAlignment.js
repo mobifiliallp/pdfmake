@@ -6,7 +6,7 @@ pdfmake.addFonts(Roboto);
 
 pdfmake.setUrlAccessPolicy((url) => {
 	// this can be used to restrict allowed domains
-	return url.startsWith('https://');;
+	return url.startsWith('https://');
 });
 
 

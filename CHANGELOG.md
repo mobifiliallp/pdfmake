@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Updated pdfkit to 0.18.0
+
 ## 0.3.6 - 2026-03-10
 
 - Added `setUrlAccessPolicy()` for defining a custom access policy for external URLs before download

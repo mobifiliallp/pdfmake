@@ -3,6 +3,7 @@
 ## Unreleased
 
 - Added server-side method `setLocalAccessPolicy()` for defining a custom access policy for local file
+
 	Example:
 	```js
 	pdfmake.setLocalAccessPolicy((path) => {

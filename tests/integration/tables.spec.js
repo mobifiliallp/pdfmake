@@ -288,4 +288,54 @@ describe('Integration test: tables', function () {
 		assert.deepEqual(getColumnText(lines, { cell: 1 }), 'Row 2');
 	});
 
+	it('does not insert an extra page when combining headerRows, dontBreakRows and cell pageBreak', function () {
+		var dd = {
+			content: {
+				table: {
+					dontBreakRows: true,
+					headerRows: 1,
+					body: [
+						['row Header', 'column B'],
+						['row 1', 'column B'],
+						['row 2', 'column B'],
+						['row 3', 'column B'],
+						[{ text: '', pageBreak: 'after' }, ''],
+						['row 4', 'column B'],
+						['row 5', 'column B']
+					]
+				}
+			}
+		};
+
+		var pages = testHelper.renderPages('A6', dd);
+		var page1Texts = getCells(pages, { pageNumber: 0 }).map(node => node.item.inlines.map(inline => inline.text).join(''));
+		var page2Texts = getCells(pages, { pageNumber: 1 }).map(node => node.item.inlines.map(inline => inline.text).join(''));
+
+		assert.equal(pages.length, 2);
+		assert.deepEqual(page1Texts, ['row Header', 'column B', 'row 1', 'column B', 'row 2', 'column B', 'row 3', 'column B', '', '']);
+		assert.deepEqual(page2Texts, ['row Header', 'column B', 'row 4', 'column B', 'row 5', 'column B']);
+	});
+
+	it('keeps finite page dimensions with dontBreakRows tables without headers', function () {
+		var dd = {
+			content: {
+				table: {
+					dontBreakRows: true,
+					body: [
+						['row 1', 'column B'],
+						['row 2', 'column B'],
+						['row 3', 'column B']
+					]
+				}
+			}
+		};
+
+		var pages = testHelper.renderPages('A6', dd);
+
+		pages.forEach(page => {
+			assert.equal(Number.isFinite(page.pageSize.width), true);
+			assert.equal(Number.isFinite(page.pageSize.height), true);
+		});
+	});
+
 });

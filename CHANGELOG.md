@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Fixed extra blank page when using headerRows, dontBreakRows and cell pageBreak together
+
 ## 0.3.7 - 2026-03-17
 
 - Updated pdfkit to 0.18.0

@@ -25,6 +25,7 @@ files.forEach(function (file) {
     if (position === files.length) {
       if (errCount) {
         console.error('Errors count: ', errCount);
+        process.exitCode = 1;
       }
     }
   });

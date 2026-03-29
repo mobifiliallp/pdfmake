@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Added server-side method `setLocalAccessPolicy()` for defining a custom access policy for local file
+	Example:
+	```js
+	pdfmake.setLocalAccessPolicy((path) => {
+		// check allowed local file path
+		return path.startsWith("fonts/");
+	});
+	```
 - Fixed extra blank page when using headerRows, dontBreakRows and cell pageBreak together
 
 ## 0.3.7 - 2026-03-17

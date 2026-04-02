@@ -173,7 +173,7 @@ class PDFDocument extends PDFKit {
 		color = color || defaultColor;
 
 		if (typeof this._normalizeColor === 'function') {
-			if (this._normalizeColor(color) === null) { // color is not valid
+			if (isString(color) && this._normalizeColor(color) === null) { // color is not valid
 				return defaultColor;
 			}
 		}

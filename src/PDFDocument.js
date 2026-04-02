@@ -169,6 +169,18 @@ class PDFDocument extends PDFKit {
 		return attachment;
 	}
 
+	resolveColor(color, defaultColor) {
+		color = color || defaultColor;
+
+		if (typeof this._normalizeColor === 'function') {
+			if (this._normalizeColor(color) === null) { // color is not valid
+				return defaultColor;
+			}
+		}
+
+		return color;
+	}
+
 	setOpenActionAsPrint() {
 		let printActionRef = this.ref({
 			Type: 'Action',

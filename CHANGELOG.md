@@ -1,5 +1,75 @@
 # Changelog
 
+## 0.2.23 - 2026-01-11
+
+- Added SVG validation: width and height must be specified (in SVG string/element or `svg` node)
+- Added support for image scaling with only `height` defined
+- Added custom `markerColor` for each item of `ul` and `ol`
+
+## 0.2.22 - 2026-01-07
+
+- Added object type validation for parameters in method `createPdf` and `createPdfKitDocument`
+- Added support `SVGElement` object for `svg` node (`SVGElement` object is available only in browser)
+- Fixed rendering SVG without viewBox
+
+## 0.2.21 - 2025-12-22
+
+- Added `wordBreak` property for `text` node, supported values: `'normal'` (default), `'break-all'`
+- Update Roboto font (version 3.014)
+- Fixed render empty list entries
+
+## 0.2.20 - 2025-05-09
+
+- Fixed text overflow with some non-wrappable texts
+
+## 0.2.19 - 2025-04-26
+
+- Update Roboto font (version 3.011)
+
+## 0.2.18 - 2025-01-01
+
+- Update pdfkit
+- Fixed a potential issue in the minimized library when detecting the orientation of JPEG images
+
+## 0.2.17 - 2024-12-23
+
+- Fixed big size pdfmake bundle for browser
+
+## 0.2.16 - 2024-12-15
+
+- Update pdfkit to 0.15.2
+- Fixed aspect ratio for image with exif orientation tag
+- Fixed font size calculation for watermark if is page orientation is changed
+
+## 0.2.15 - 2024-11-02
+
+- Added support PDF/A and PDF/UA (see [documentation](https://pdfmake.github.io/docs/0.1/document-definition-object/pdfa/))
+- Changed Virtual file system (VFS) format for better compatibility with frameworks (backwards compatibility preserved). **For compatibility with frameworks, rebuild VFS required!**
+- Browser: Added methods for fonts (`addFonts`, `setFonts`, `clearFonts`)
+- Browser: Added methods for table layouts (`addTableLayouts`, `setTableLayouts`, `clearTableLayouts`)
+- Added support `link`, `linkToPage` and `linkToDestination` for SVG
+- Update pdfkit to 0.15.1
+- Fixed bug with how page breaks provoked by cells with rowspan were handled
+- Fixed find where previous cell started with row span and col span combination
+- Fixed calculating correctly the 'y' at the end of a rowSpan with dontBreakRows
+
+## 0.2.14 - 2024-10-09
+
+- Fixed drawing top horizontal line of the table with page break
+- Fixed uncaught Error when rowSpan and dontBreakRows combined
+
+## 0.2.13 - 2024-09-22
+
+- Minimal supported version Node.js 18 LTS
+- Update Roboto font (version 3.010)
+- Fixed page break in a column group
+- Fixed saving margins in an unbreakable block
+- Fixed fillColor items in unbreakable blocks
+- Fixed calculating correctly the 'y' at the end of a rowSpan with dontBreakRows
+- Fixed margins (top/bottom) of nodes and row height are considered for breaking page
+- Fixed margins after page break
+- Fixed margins of nodes with relativePosition or absolutePosition are ignored and don't interfere with the regular flow of the layout
+
 ## 0.2.12 - 2024-08-14
 
 - Fixed error message of bad image definition

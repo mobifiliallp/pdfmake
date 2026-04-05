@@ -15,6 +15,7 @@ var isNumber = require('./helpers').isNumber;
 var isBoolean = require('./helpers').isBoolean;
 var isArray = require('./helpers').isArray;
 var isUndefined = require('./helpers').isUndefined;
+var isObject = require('./helpers').isObject;
 var isPattern = require('./helpers').isPattern;
 var getPattern = require('./helpers').getPattern;
 var SVGtoPDF = require('./3rd-party/svg-to-pdfkit');
@@ -111,7 +112,18 @@ function PdfPrinter(fontDescriptors) {
 PdfPrinter.prototype.createPdfKitDocument = function (docDefinition, options) {
 	options = options || {};
 
+	if (!isObject(docDefinition)) {
+		throw new Error("Parameter 'docDefinition' has an invalid type. Object expected.");
+	}
+
+	if (!isObject(options)) {
+		throw new Error("Parameter 'options' has an invalid type. Object expected.");
+	}
+
 	docDefinition.version = docDefinition.version || '1.3';
+	docDefinition.subset = docDefinition.subset || undefined;
+	docDefinition.tagged = typeof docDefinition.tagged === 'boolean' ? docDefinition.tagged : false;
+	docDefinition.displayTitle = typeof docDefinition.displayTitle === 'boolean' ? docDefinition.displayTitle : false;
 	docDefinition.compress = isBoolean(docDefinition.compress) ? docDefinition.compress : true;
 	docDefinition.images = docDefinition.images || {};
 	docDefinition.pageMargins = ((docDefinition.pageMargins !== undefined) && (docDefinition.pageMargins !== null)) ? docDefinition.pageMargins : 40;
@@ -121,11 +133,14 @@ PdfPrinter.prototype.createPdfKitDocument = function (docDefinition, options) {
 	var pdfOptions = {
 		size: [pageSize.width, pageSize.height],
 		pdfVersion: docDefinition.version,
+		subset: docDefinition.subset,
+		tagged: docDefinition.tagged,
+		displayTitle: docDefinition.displayTitle,
 		compress: docDefinition.compress,
 		userPassword: docDefinition.userPassword,
 		ownerPassword: docDefinition.ownerPassword,
 		permissions: docDefinition.permissions,
-        lang: docDefinition.language,
+		lang: docDefinition.language,
 		fontLayoutCache: isBoolean(options.fontLayoutCache) ? options.fontLayoutCache : true,
 		bufferPages: options.bufferPages || false,
 		autoFirstPage: false,
@@ -706,7 +721,7 @@ function renderImage(image, x, y, pdfKitDoc) {
 }
 
 function renderSVG(svg, x, y, pdfKitDoc, fontProvider) {
-	var options = Object.assign({ width: svg._width, height: svg._height, assumePt: true }, svg.options);
+	var options = Object.assign({ width: svg._width, height: svg._height, assumePt: true, useCSS: !isString(svg.svg) }, svg.options);
 	options.fontCallback = function (family, bold, italic) {
 		var fontsFamily = family.split(',').map(function (f) { return f.trim().replace(/('|")/g, ''); });
 		var font = findFont(fontProvider.fonts, fontsFamily, svg.font || 'Roboto');
@@ -721,6 +736,17 @@ function renderSVG(svg, x, y, pdfKitDoc, fontProvider) {
 	};
 
 	SVGtoPDF(pdfKitDoc, svg.svg, svg.x, svg.y, options);
+
+	if (svg.link) {
+		pdfKitDoc.link(svg.x, svg.y, svg._width, svg._height, svg.link);
+	}
+	if (svg.linkToPage) {
+		pdfKitDoc.ref({Type: 'Action', S: 'GoTo', D: [svg.linkToPage, 0, 0]}).end();
+		pdfKitDoc.annotate(svg.x, svg.y, svg._width, svg._height, { Subtype: 'Link', Dest: [svg.linkToPage - 1, 'XYZ', null, null, null] });
+	}
+	if (svg.linkToDestination) {
+		pdfKitDoc.goTo(svg.x, svg.y, svg._width, svg._height, svg.linkToDestination);
+	}
 }
 
 function beginClip(rect, pdfKitDoc) {

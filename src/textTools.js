@@ -112,19 +112,43 @@ TextTools.prototype.sizeOfRotatedText = function (text, angle, styleContextStack
 		width: Math.abs(size.height * Math.sin(angleRad)) + Math.abs(size.width * Math.cos(angleRad)),
 		height: Math.abs(size.width * Math.sin(angleRad)) + Math.abs(size.height * Math.cos(angleRad))
 	};
-}
+};
 
 TextTools.prototype.widthOfString = function (text, font, fontSize, characterSpacing, fontFeatures) {
 	return widthOfString(text, font, fontSize, characterSpacing, fontFeatures);
 };
 
-function splitWords(text, noWrap) {
+function splitWords(text, noWrap, breakAll) {
+	if (breakAll === undefined) {
+		breakAll = false;
+	}
+
 	var results = [];
+
+	if (text === undefined || text === null) {
+		text = '';
+	} else {
+		text = String(text);
+	}
+
 	text = text.replace(/\t/g, '    ');
 
 	if (noWrap) {
 		results.push({ text: text });
 		return results;
+	}
+
+	if (text.length === 0) {
+	 	results.push({ text: '' });
+	 	return results;
+	}
+	if (breakAll) {
+		return text.split('').map(c => {
+			if(c.match(/^\n$|^\r$/)) { // new line
+				return { text: '', lineEnd: true };
+			}
+			return { text: c };
+		});
 	}
 
 	var breaker = new LineBreaker(text);
@@ -205,15 +229,16 @@ function normalizeTextArray(array, styleContextStack) {
 		var style = null;
 		var words;
 
+		var breakAll = getStyleProperty(item || {}, styleContextStack, 'wordBreak', 'normal') === 'break-all';
 		var noWrap = getStyleProperty(item || {}, styleContextStack, 'noWrap', false);
 		if (isObject(item)) {
 			if (item._textRef && item._textRef._textNodeRef.text) {
 				item.text = item._textRef._textNodeRef.text;
 			}
-			words = splitWords(normalizeString(item.text), noWrap);
+			words = splitWords(normalizeString(item.text), noWrap, breakAll);
 			style = copyStyle(item);
 		} else {
-			words = splitWords(normalizeString(item), noWrap);
+			words = splitWords(normalizeString(item), noWrap, breakAll);
 		}
 
 		if (lastWord && words.length) {
@@ -320,7 +345,7 @@ function measure(fontProvider, textArray, styleContextStack) {
 
 		if ((sup || sub) && item.fontSize === undefined) {
 			// font size reduction taken from here: https://en.wikipedia.org/wiki/Subscript_and_superscript#Desktop_publishing
-			fontSize *= 0.58
+			fontSize *= 0.58;
 		}
 
 		var font = fontProvider.provideFont(fontName, bold, italics);
@@ -369,5 +394,7 @@ function measure(fontProvider, textArray, styleContextStack) {
 function widthOfString(text, font, fontSize, characterSpacing, fontFeatures) {
 	return font.widthOfString(text, fontSize, fontFeatures) + ((characterSpacing || 0) * (text.length - 1));
 }
+
+TextTools.getStyleProperty = getStyleProperty;
 
 module.exports = TextTools;

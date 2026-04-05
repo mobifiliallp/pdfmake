@@ -1,4 +1,5 @@
 .git*
+.idea/
 dev-playground/
 docs/
 examples/
@@ -10,5 +11,6 @@ bower.json
 webpack.config.js
 webpack-standardfonts.config.js
 .editorconfig
-.eslintrc.json
+.typos.toml
+eslint.config.mjs
 build-examples.js

@@ -5,7 +5,7 @@ function isString(variable) {
 }
 
 function isNumber(variable) {
-	return typeof variable === 'number' || variable instanceof Number;
+	return ((typeof variable === 'number') || (variable instanceof Number)) && !Number.isNaN(variable);
 }
 
 function isBoolean(variable) {
@@ -38,7 +38,7 @@ function isUndefined(variable) {
  */
 function isPositiveInteger(variable) {
 	if (!isNumber(variable) || !Number.isInteger(variable) || variable <= 0) {
-			return false;
+		return false;
 	}
 	return true;
 }

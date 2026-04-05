@@ -1,9 +1,9 @@
 # pdfmake [![GitHub][github_img]][github_url] [![npm][npm_img]][npm_url]
 
-[githubactions_img]: https://github.com/bpampuch/pdfmake/workflows/Node.js%20CI/badge.svg?branch=0.1
+[githubactions_img]: https://github.com/bpampuch/pdfmake/actions/workflows/node.js.yml/badge.svg?branch=0.2
 [githubactions_url]: https://github.com/bpampuch/pdfmake/actions
 
-[github_img]: https://img.shields.io/github/release/mfllp/pdfmake.svg
+[github_img]: https://img.shields.io/github/release/mfllp/pdfmake.svg?colorB=0E7FBF
 [github_url]: https://github.com/mfllp/pdfmake/releases/latest
 
 [npm_img]: https://img.shields.io/npm/v/pdfmake.svg?colorB=0E7FBF

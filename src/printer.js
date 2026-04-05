@@ -19,6 +19,7 @@ var isObject = require('./helpers').isObject;
 var isPattern = require('./helpers').isPattern;
 var getPattern = require('./helpers').getPattern;
 var SVGtoPDF = require('./3rd-party/svg-to-pdfkit');
+var RenderX = require('./mfllpX/render');
 
 var findFont = function (fonts, requiredFonts, defaultFont) {
 	for (var i = 0; i < requiredFonts.length; i++) {
@@ -288,33 +289,6 @@ function fixPageSize(pageSize, pageOrientation) {
 	return size;
 }
 
-// mf-x-swa: added helper to calculate layout without generating the PDF
-PdfPrinter.prototype.computeDocumentLayout = function(docDefinition, options) {
-	options = options || {};
-
-	var pageSize = fixPageSize(docDefinition.pageSize, docDefinition.pageOrientation);
-	var compressPdf = isBoolean(docDefinition.compress) ? docDefinition.compress : true;
-	var bufferPages = options.bufferPages || false;
-
-	this.pdfKitDoc = PdfKitEngine.createPdfDocument({size: [pageSize.width, pageSize.height], bufferPages: bufferPages, autoFirstPage: false, compress: compressPdf});
-	setMetadata(docDefinition, this.pdfKitDoc);
-
-	this.fontProvider = new FontProvider(this.fontDescriptors, this.pdfKitDoc);
-
-	docDefinition.images = docDefinition.images || {};
-
-	var builder = new LayoutBuilder(pageSize, fixPageMargins(docDefinition.pageMargins || 40), new ImageMeasure(this.pdfKitDoc, docDefinition.images));
-
-	registerDefaultTableLayouts(builder);
-	if (options.tableLayouts) {
-		builder.registerTableLayouts(options.tableLayouts);
-	}
-
-	builder.layoutDocument(docDefinition.content, this.fontProvider, docDefinition.styles || {}, docDefinition.defaultStyle || {fontSize: 12, font: 'Roboto'}, docDefinition.background, docDefinition.header, docDefinition.footer, docDefinition.images, docDefinition.watermark, docDefinition.pageBreakBefore);
-
-	return builder.writer.context();
-};
-
 function fixPageMargins(margin) {
 	if (isNumber(margin)) {
 		margin = { left: margin, right: margin, top: margin, bottom: margin };
@@ -433,25 +407,29 @@ function renderPages(pages, fontProvider, pdfKitDoc, patterns, progressCallback)
 		var page = pages[i];
 		for (var ii = 0, il = page.items.length; ii < il; ii++) {
 			var item = page.items[ii];
-			switch (item.type) {
-				case 'vector':
-					renderVector(item.item, patterns, pdfKitDoc);
-					break;
-				case 'line':
-					renderLine(item.item, item.item.x, item.item.y, patterns, pdfKitDoc);
-					break;
-				case 'image':
-					renderImage(item.item, item.item.x, item.item.y, pdfKitDoc);
-					break;
-				case 'svg':
-					renderSVG(item.item, item.item.x, item.item.y, pdfKitDoc, fontProvider);
-					break;
-				case 'beginClip':
-					beginClip(item.item, pdfKitDoc);
-					break;
-				case 'endClip':
-					endClip(pdfKitDoc);
-					break;
+			// Try to render X-type items (images and vectors) using RenderX. If the item is not an X-type or if rendering fails, fall back to the standard rendering methods for other item types.
+			var renderedX = RenderX.render(item, pdfKitDoc);
+			if (!renderedX) {
+				switch (item.type) {
+					case 'vector':
+						renderVector(item.item, patterns, pdfKitDoc);
+						break;
+					case 'line':
+						renderLine(item.item, item.item.x, item.item.y, patterns, pdfKitDoc);
+						break;
+					case 'image':
+						renderImage(item.item, item.item.x, item.item.y, pdfKitDoc);
+						break;
+					case 'svg':
+						renderSVG(item.item, item.item.x, item.item.y, pdfKitDoc, fontProvider);
+						break;
+					case 'beginClip':
+						beginClip(item.item, pdfKitDoc);
+						break;
+					case 'endClip':
+						endClip(pdfKitDoc);
+						break;
+				}
 			}
 			renderedItems++;
 			progressCallback(renderedItems / totalItems);
@@ -594,11 +572,6 @@ function renderWatermark(page, pdfKitDoc) {
 }
 
 function renderVector(vector, patterns, pdfKitDoc) {
-	// mf-x-swa: check extended vector support
-	if (vector.type.startsWith('x-')) {
-		return renderXVector(vector, pdfKitDoc);
-	}
-
 	//TODO: pdf optimization (there's no need to write all properties everytime)
 	pdfKitDoc.lineWidth(vector.lineWidth || 1);
 	if (vector.dash) {
@@ -693,10 +666,7 @@ function renderVector(vector, patterns, pdfKitDoc) {
 function renderImage(image, x, y, pdfKitDoc) {
 	var opacity = isNumber(image.opacity) ? image.opacity : 1;
 	pdfKitDoc.opacity(opacity);
-	// mf-x-swa: extended image check
-	if (image.xImage) {
-		renderXImage(image, pdfKitDoc);
-	} else if (image.cover) {
+	if (image.cover) {
 		var align = image.cover.align || 'center';
 		var valign = image.cover.valign || 'center';
 		var width = image.cover.width ? image.cover.width : image.width;
@@ -741,7 +711,7 @@ function renderSVG(svg, x, y, pdfKitDoc, fontProvider) {
 		pdfKitDoc.link(svg.x, svg.y, svg._width, svg._height, svg.link);
 	}
 	if (svg.linkToPage) {
-		pdfKitDoc.ref({Type: 'Action', S: 'GoTo', D: [svg.linkToPage, 0, 0]}).end();
+		pdfKitDoc.ref({ Type: 'Action', S: 'GoTo', D: [svg.linkToPage, 0, 0] }).end();
 		pdfKitDoc.annotate(svg.x, svg.y, svg._width, svg._height, { Subtype: 'Link', Dest: [svg.linkToPage - 1, 'XYZ', null, null, null] });
 	}
 	if (svg.linkToDestination) {
@@ -768,245 +738,48 @@ function createPatterns(patternDefinitions, pdfKitDoc) {
 	return patterns;
 }
 
-/*
- * mf-x-swa: Extended features handlers
- */
-function renderXImage(image, pdfKitDoc) {
-	pdfKitDoc.save();
-	if (image.rotation !== 0) {
-		docTransformRotate(image.rotation, image.rotationOrigin, pdfKitDoc);
+PdfPrinter.prototype.computeDocumentLayout = function (docDefinition, options) {
+	options = options || {};
+
+	var pageSize = printer.fixPageSize(docDefinition.pageSize, docDefinition.pageOrientation);
+
+	var pdfOptions = {
+		size: [pageSize.width, pageSize.height],
+		pdfVersion: docDefinition.version,
+		subset: docDefinition.subset,
+		tagged: docDefinition.tagged,
+		displayTitle: docDefinition.displayTitle,
+		compress: docDefinition.compress,
+		userPassword: docDefinition.userPassword,
+		ownerPassword: docDefinition.ownerPassword,
+		permissions: docDefinition.permissions,
+		lang: docDefinition.language,
+		fontLayoutCache: isBoolean(options.fontLayoutCache) ? options.fontLayoutCache : true,
+		bufferPages: options.bufferPages || false,
+		autoFirstPage: false,
+		info: createMetadata(docDefinition),
+		font: null
+	};
+
+	this.pdfKitDoc = PdfKitEngine.createPdfDocument(pdfOptions);
+
+	this.fontProvider = new FontProvider(this.fontDescriptors, this.pdfKitDoc);
+
+	docDefinition.images = docDefinition.images || {};
+
+	var builder = new LayoutBuilder(pageSize, fixPageMargins(docDefinition.pageMargins || 40), new ImageMeasure(this.pdfKitDoc, docDefinition.images));
+
+	registerDefaultTableLayouts(builder);
+	if (options.tableLayouts) {
+		builder.registerTableLayouts(options.tableLayouts);
 	}
 
-	if (image.xImageFlipV || image.xImageFlipH) {
-		pdfKitDoc.scale(
-			image.xImageFlipH ? -1 : 1,
-			image.xImageFlipV ? -1 : 1,
-			{
-				origin: [image.x + image._width / 2, image.y + image._height / 2]
-			}
-		);
-	}
+	builder.layoutDocument(docDefinition.content, this.fontProvider, docDefinition.styles || {}, docDefinition.defaultStyle || {
+		fontSize: 12,
+		font: 'Roboto'
+	}, docDefinition.background, docDefinition.header, docDefinition.footer, docDefinition.images, docDefinition.watermark, docDefinition.pageBreakBefore);
 
-	pdfKitDoc.image(image.image, image.x, image.y, {
-		width: image._width,
-		height: image._height
-	});
-	pdfKitDoc.restore();
-}
-
-function docTransformRotate(angle, origin, pdfKitDoc) {
-	var fixedAngle = (angle * -1).toFixed(2);
-
-	if ((origin !== null) && (origin !== undefined)) {
-		pdfKitDoc.rotate(fixedAngle, {
-			origin: [origin.x, origin.y]
-		});
-	} else {
-		pdfKitDoc.rotate(fixedAngle);
-	}
-}
-
-function renderXVector(vector, pdfKitDoc) {
-	switch (vector.type) {
-		case 'x-saveContext':
-			pdfKitDoc.save();
-			break;
-
-		case 'x-restoreContext':
-			pdfKitDoc.restore();
-			break;
-
-		case 'x-rotateContext':
-			xVecRotateContext(vector, pdfKitDoc);
-			break;
-
-		case 'x-translateContext':
-			xVecTranslateContext(vector, pdfKitDoc);
-			break;
-
-		case 'x-scaleContext':
-			xVecScaleContext(vector, pdfKitDoc);
-			break;
-
-			case 'x-lineStyle':
-			xVecLineStyle(vector, pdfKitDoc);
-			break;
-
-		case 'x-strokeColor':
-			xVecStrokeColor(vector, pdfKitDoc);
-			break;
-
-		case 'x-fillColor':
-			xVecFillColor(vector, pdfKitDoc);
-			break;
-
-		case 'x-strokePath':
-			xVecStrokePath(vector, pdfKitDoc);
-			break;
-
-		case 'x-fillPath':
-			xVecFillPath(vector, pdfKitDoc);
-			break;
-
-		case 'x-fillAndStrokePath':
-			xVecFillAndStrokePath(vector, pdfKitDoc);
-			break;
-
-		case 'x-moveTo':
-			xVecMoveTo(vector, pdfKitDoc);
-			break;
-
-		case 'x-lineTo':
-			xVecLineTo(vector, pdfKitDoc);
-			break;
-
-		case 'x-line':
-			xVecLine(vector, pdfKitDoc);
-			break;
-
-		case 'x-rect':
-			xVecRect(vector, pdfKitDoc);
-			break;
-
-		case 'x-ellipse':
-			xVecElipse(vector, pdfKitDoc);
-			break;
-
-		case 'x-quadraticCurve':
-			xVecQuadraticCurve(vector, pdfKitDoc);
-			break;
-
-		case 'x-bezierCurve':
-			xVecBezierCurve(vector, pdfKitDoc);
-			break;
-
-		case 'x-closePath':
-			pdfKitDoc.closePath();
-			break;
-
-		case 'x-clipToRect':
-			xVecClipToRect(vector, pdfKitDoc);
-			break;
-	}
-}
-
-function xVecRotateContext(vector, pdfKitDoc) {
-	var angle = (vector.angle * -1).toFixed(2);
-
-	if (vector.origin !== undefined) {
-		pdfKitDoc.rotate(angle, {
-			origin: [vector.origin.x, vector.origin.y]
-		});
-	} else {
-		pdfKitDoc.rotate(angle);
-	}
-}
-
-function xVecTranslateContext(vector, pdfKitDoc) {
-	pdfKitDoc.translate(vector.x, vector.y);
-}
-
-function xVecScaleContext(vector, pdfKitDoc) {
-	var scale = vector.scale;
-
-	if (vector.origin !== undefined) {
-		pdfKitDoc.scale(scale, {
-			origin: [vector.origin.x, vector.origin.y]
-		});
-	} else {
-		pdfKitDoc.scale(scale);
-	}
-}
-
-function xVecLineStyle(vector, pdfKitDoc) {
-	pdfKitDoc.lineWidth(vector.lineWidth || 1);
-	if (vector.dash) {
-		pdfKitDoc.dash(vector.dash.length, {
-			space: vector.dash.space || vector.dash.length
-		});
-	} else {
-		pdfKitDoc.undash();
-	}
-}
-
-function xVecStrokeColor(vector, pdfKitDoc) {
-	if (vector.strokeOpacity) {
-		pdfKitDoc.strokeColor(vector.strokeColor, vector.strokeOpacity);
-	} else {
-		pdfKitDoc.strokeColor(vector.strokeColor);
-	}
-}
-
-function xVecFillColor(vector, pdfKitDoc) {
-	if (vector.fillOpacity) {
-		pdfKitDoc.fillColor(vector.fillColor, vector.fillOpacity);
-	} else {
-		pdfKitDoc.fillColor(vector.fillColor);
-	}
-}
-
-function xVecStrokePath(vector, pdfKitDoc) {
-	if (vector.strokeColor !== undefined) {
-		pdfKitDoc.stroke(vector.strokeColor);
-	} else {
-		pdfKitDoc.stroke();
-	}
-}
-
-function xVecFillPath(vector, pdfKitDoc) {
-	if (vector.fillColor !== undefined) {
-		pdfKitDoc.fill(vector.fillColor);
-	} else {
-		pdfKitDoc.fill();
-	}
-}
-
-function xVecFillAndStrokePath(vector, pdfKitDoc) {
-	if ((vector.strokeColor !== undefined) && (vector.fillColor !== undefined)) {
-		pdfKitDoc.fillAndStroke(vector.fillColor, vector.strokeColor);
-	} else {
-		pdfKitDoc.fillAndStroke();
-	}
-}
-
-function xVecMoveTo(vector, pdfKitDoc) {
-	pdfKitDoc.moveTo(vector.x, vector.y);
-}
-
-function xVecLineTo(vector, pdfKitDoc) {
-	pdfKitDoc.lineTo(vector.x, vector.y);
-}
-
-function xVecLine(vector, pdfKitDoc) {
-	pdfKitDoc.moveTo(vector.x1, vector.y1);
-	pdfKitDoc.lineTo(vector.x2, vector.y2);
-}
-
-function xVecRect(vector, pdfKitDoc) {
-	pdfKitDoc.rect(vector.x, vector.y, vector.width, vector.height);
-}
-
-function xVecElipse(vector, pdfKitDoc) {
-	pdfKitDoc.ellipse(vector.cx, vector.cy, vector.rx, vector.ry);
-}
-
-function xVecQuadraticCurve(vector, pdfKitDoc) {
-	if ((vector.x1 !== undefined) && (vector.y1 !== undefined)) {
-		pdfKitDoc.moveTo(vector.x1, vector.y1);
-	}
-	pdfKitDoc.quadraticCurveTo(vector.cpx, vector.cpy, vector.x2, vector.y2);
-}
-
-function xVecBezierCurve(vector, pdfKitDoc) {
-	if ((vector.x1 !== undefined) && (vector.y1 !== undefined)) {
-		pdfKitDoc.moveTo(vector.x1, vector.y1);
-	}
-	pdfKitDoc.bezierCurveTo(vector.cpx1, vector.cpy1, vector.cpx2, vector.cpy2, vector.x2, vector.y2);
-}
-
-function xVecClipToRect(vector, pdfKitDoc) {
-	pdfKitDoc.rect(vector.x, vector.y, vector.width, vector.height);
-	pdfKitDoc.clip();
-}
+	return builder.writer.context();
+};
 
 module.exports = PdfPrinter;

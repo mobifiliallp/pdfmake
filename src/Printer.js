@@ -102,6 +102,65 @@ class PdfPrinter {
 	}
 
 	/**
+	 * Computes the document layout without rendering a PDF.
+	 * Useful for determining page count, element positions, etc.
+	 *
+	 * @param {object} docDefinition
+	 * @param {object} options
+	 * @returns {Promise<DocumentContext>}
+	 */
+	async computeDocumentLayout(docDefinition, options = {}) {
+		await this.resolveUrls(docDefinition);
+
+		docDefinition.images = docDefinition.images || {};
+		docDefinition.patterns = docDefinition.patterns || {};
+		docDefinition.attachments = docDefinition.attachments || {};
+
+		let pageSize = normalizePageSize(docDefinition.pageSize, docDefinition.pageOrientation);
+
+		let pdfOptions = {
+			size: [pageSize.width, pageSize.height],
+			pdfVersion: docDefinition.version || '1.3',
+			compress: typeof docDefinition.compress === 'boolean' ? docDefinition.compress : true,
+			fontLayoutCache: typeof options.fontLayoutCache === 'boolean' ? options.fontLayoutCache : true,
+			bufferPages: options.bufferPages || false,
+			autoFirstPage: false,
+			font: null
+		};
+
+		this.pdfKitDoc = new PDFDocument(
+			this.fontDescriptors,
+			docDefinition.images,
+			docDefinition.patterns,
+			docDefinition.attachments,
+			pdfOptions,
+			this.virtualfs,
+			this.localAccessPolicy
+		);
+
+		const builder = new LayoutBuilder(pageSize, normalizePageMargin(docDefinition.pageMargins || 40), new SVGMeasure());
+
+		builder.registerTableLayouts(tableLayouts);
+		if (options.tableLayouts) {
+			builder.registerTableLayouts(options.tableLayouts);
+		}
+
+		builder.layoutDocument(
+			docDefinition.content,
+			this.pdfKitDoc,
+			docDefinition.styles || {},
+			docDefinition.defaultStyle || { fontSize: 12, font: 'Roboto' },
+			docDefinition.background,
+			docDefinition.header,
+			docDefinition.footer,
+			docDefinition.watermark,
+			docDefinition.pageBreakBefore
+		);
+
+		return builder.writer.context();
+	}
+
+	/**
 	 * @param {object} docDefinition
 	 * @returns {Promise}
 	 */

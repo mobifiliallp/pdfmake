@@ -2,6 +2,8 @@ import TextDecorator from './TextDecorator';
 import TextInlines from './TextInlines';
 import { isNumber, isString } from './helpers/variableType';
 import SVGtoPDF from './3rd-party/svg-to-pdfkit';
+import ImageX from './mfllpX/image';
+import VectorX from './mfllpX/vector';
 
 const findFont = (fonts, requiredFonts, defaultFont) => {
 	for (let i = 0; i < requiredFonts.length; i++) {
@@ -207,6 +209,11 @@ class Renderer {
 	}
 
 	renderVector(vector) {
+		if (vector.type.startsWith('x-')) {
+			VectorX.render(vector, this.pdfDocument);
+			return;
+		}
+
 		//TODO: pdf optimization (there's no need to write all properties everytime)
 		this.pdfDocument.lineWidth(vector.lineWidth || 1);
 		if (vector.dash) {
@@ -302,6 +309,10 @@ class Renderer {
 	renderImage(image) {
 		let opacity = isNumber(image.opacity) ? image.opacity : 1;
 		this.pdfDocument.opacity(opacity);
+		if (image.xImage) {
+			ImageX.render(image, this.pdfDocument);
+			return;
+		}
 		if (image.cover) {
 			const align = image.cover.align || 'center';
 			const valign = image.cover.valign || 'center';

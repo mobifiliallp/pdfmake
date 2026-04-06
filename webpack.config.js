@@ -63,7 +63,7 @@ module.exports = {
 							{
 								pattern: "fs.readFileSync(`${__dirname}/data/sRGB_IEC61966_2_1.icc`)",
 								replacement: function () {
-									const data = fs.readFileSync('node_modules/pdfkit/js/data/sRGB_IEC61966_2_1.icc');
+									const data = fs.readFileSync('node_modules/@foliojs-fork/pdfkit/js/data/sRGB_IEC61966_2_1.icc');
 									return `Buffer("` + data.toString('base64') + `","base64");`;
 								}
 							}

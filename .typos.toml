@@ -17,5 +17,6 @@ extend-ignore-re = [
 	"Mont-sur-Monnet",
 	"Leafs",
 	"leafs",
-	"pn"
+	"pn",
+	"cpy"
 ]

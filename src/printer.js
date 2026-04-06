@@ -741,7 +741,7 @@ function createPatterns(patternDefinitions, pdfKitDoc) {
 PdfPrinter.prototype.computeDocumentLayout = function (docDefinition, options) {
 	options = options || {};
 
-	var pageSize = printer.fixPageSize(docDefinition.pageSize, docDefinition.pageOrientation);
+	var pageSize = fixPageSize(docDefinition.pageSize, docDefinition.pageOrientation);
 
 	var pdfOptions = {
 		size: [pageSize.width, pageSize.height],

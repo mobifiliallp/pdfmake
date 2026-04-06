@@ -11,16 +11,16 @@ var VectorX = require('./vector.js');
 class RenderX {
 	/**
 	 * Renders an X-type item (image or vector) on the PDF document.
-	 * @param {Object} item - The item to be rendered.
-	 * @param {Object} pdfKitDoc - The PDF document object.
+	 * @param {object} item - The item to be rendered.
+	 * @param {object} pdfKitDoc - The PDF document object.
 	 * @returns {boolean} - Returns true if the item was rendered, false otherwise.
 	 */
 	static render(item, pdfKitDoc) {
 		if (item.type == 'image' && item.xImage) {
-			ImageX.renderImage(item, pdfKitDoc);
+			ImageX.render(item, pdfKitDoc);
 			return true;
 		} else if (item.type == 'vector' && item.item.type.startsWith('x-')) {
-			VectorX.renderXVector(item.item, pdfKitDoc);
+			VectorX.render(item.item, pdfKitDoc);
 			return true;
 		}
 		return false;

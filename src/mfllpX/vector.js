@@ -4,8 +4,8 @@
 class VectorX {
 	/**
 	 * Renders a vector graphic on the PDF document.
-	 * @param {Object} vector - The vector graphic to be rendered.
-	 * @param {Object} pdfKitDoc - The PDF document object.
+	 * @param {object} vector - The vector graphic to be rendered.
+	 * @param {object} pdfKitDoc - The PDF document object.
 	 */
 	static render(vector, pdfKitDoc) {
 		switch (vector.type) {

@@ -4,10 +4,10 @@
 class ImageX {
 	/**
 	 * Renders an image on the PDF document.
-	 * @param {Object} image - The image to be rendered.
-	 * @param {Object} pdfKitDoc - The PDF document object.
+	 * @param {object} image - The image to be rendered.
+	 * @param {object} pdfKitDoc - The PDF document object.
 	 */
-	static renderImage(image, pdfKitDoc) {
+	static render(image, pdfKitDoc) {
 		pdfKitDoc.save();
 		if (image.rotation !== 0) {
 			ImageX.docTransformRotate(image.rotation, image.rotationOrigin, pdfKitDoc);
@@ -33,8 +33,8 @@ class ImageX {
 	/**
 	 * Applies a rotation transformation to the PDF document.
 	 * @param {number} angle - The rotation angle in degrees.
-	 * @param {Object} origin - The origin point for the rotation.
-	 * @param {Object} pdfKitDoc - The PDF document object.
+	 * @param {object} origin - The origin point for the rotation.
+	 * @param {object} pdfKitDoc - The PDF document object.
 	 */
 	static docTransformRotate(angle, origin, pdfKitDoc) {
 		var fixedAngle = (angle * -1).toFixed(2);

@@ -16,8 +16,8 @@ class RenderX {
 	 * @returns {boolean} - Returns true if the item was rendered, false otherwise.
 	 */
 	static render(item, pdfKitDoc) {
-		if (item.type == 'image' && item.xImage) {
-			ImageX.render(item, pdfKitDoc);
+		if (item.type == 'image' && item.item.xImage) {
+			ImageX.render(item.item, pdfKitDoc);
 			return true;
 		} else if (item.type == 'vector' && item.item.type.startsWith('x-')) {
 			VectorX.render(item.item, pdfKitDoc);
